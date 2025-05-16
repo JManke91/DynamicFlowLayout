@@ -10,8 +10,5 @@ import DynamicFlowLayout
 FlowLayout(maxRows: 2) {
     ForEach(0..<20) { i in
         Text("Item \(i)")
-            .padding(8)
-            .background(Color.blue)
-            .cornerRadius(8)
     }
 }

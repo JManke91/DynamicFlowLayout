@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # This gives the workflow permission to push tags
+
 jobs:
   auto-tag:
     runs-on: ubuntu-latest
@@ -14,6 +17,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Fetch all history to properly determine version
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get latest tag
         id: get-latest-tag

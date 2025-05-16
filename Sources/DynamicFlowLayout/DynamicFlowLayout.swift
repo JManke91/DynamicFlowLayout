@@ -4,9 +4,14 @@ import SwiftUI
 
 public struct FlowLayout: Layout {
     public var maxRows: Int?
+    public var horizontalSpacing: CGFloat
+    public var verticalSpacing: CGFloat
 
-    public init(maxRows: Int? = nil) {
+
+    public init(maxRows: Int? = nil, horizontalSpacing: CGFloat = 0, verticalSpacing: CGFloat = 0) {
         self.maxRows = maxRows
+        self.horizontalSpacing = horizontalSpacing
+        self.verticalSpacing = verticalSpacing
     }
 
     public func sizeThatFits(
@@ -21,27 +26,29 @@ public struct FlowLayout: Layout {
         var position = CGPoint.zero
         var currentRow = 0
 
-        for subSize in subSizes {
+        for (index, subSize) in subSizes.enumerated() {
             let lineBreakAllowed = position.x > 0
-            if lineBreakAllowed, position.x + subSize.width > proposedWidth {
+            let spacingX = (lineBreakAllowed ? horizontalSpacing : 0)
+
+            if lineBreakAllowed, position.x + spacingX + subSize.width > proposedWidth {
                 currentRow += 1
                 if let maxRows, currentRow >= maxRows {
                     break
                 }
                 position.x = 0
-                position.y += rowHeight
+                position.y += rowHeight + verticalSpacing
             }
 
             if let maxRows, currentRow >= maxRows {
                 break
             }
 
-            position.x += subSize.width
+            position.x += (index > 0 ? horizontalSpacing : 0) + subSize.width
         }
 
         return CGSize(
             width: proposedWidth.isFinite ? proposedWidth : position.x,
-            height: CGFloat(currentRow + 1) * rowHeight
+            height: CGFloat(currentRow + 1) * rowHeight + CGFloat(currentRow) * verticalSpacing
         )
     }
 
@@ -54,15 +61,14 @@ public struct FlowLayout: Layout {
         var currentRow = 0
         var exceededMaxRows = false
 
-        for (subview, subSize) in zip(subviews, subSizes) {
+        for (index, (subview, subSize)) in zip(subviews, subSizes).enumerated() {
             let lineBreakAllowed = position.x > 0
-            if lineBreakAllowed, position.x + subSize.width > proposedWidth {
+            let spacingX = (lineBreakAllowed ? horizontalSpacing : 0)
+
+            if lineBreakAllowed, position.x + spacingX + subSize.width > proposedWidth {
                 currentRow += 1
-                if let maxRows, currentRow >= maxRows {
-                    exceededMaxRows = true
-                }
                 position.x = 0
-                position.y += rowHeight
+                position.y += rowHeight + verticalSpacing
             }
 
             if let maxRows, currentRow >= maxRows {
@@ -82,7 +88,7 @@ public struct FlowLayout: Layout {
                     ),
                     proposal: proposal
                 )
-                position.x += subSize.width
+                position.x += (index > 0 ? horizontalSpacing : 0) + subSize.width
             }
         }
     }

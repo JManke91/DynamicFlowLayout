@@ -58,6 +58,9 @@ public struct FlowLayout: Layout {
             let lineBreakAllowed = position.x > 0
             if lineBreakAllowed, position.x + subSize.width > proposedWidth {
                 currentRow += 1
+                if let maxRows, currentRow >= maxRows {
+                    exceededMaxRows = true
+                }
                 position.x = 0
                 position.y += rowHeight
             }

@@ -9,39 +9,39 @@ public struct FlowLayout: Layout {
         self.maxRows = maxRows
     }
 
-    public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+    public func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) -> CGSize {
         let subSizes = subviews.map { $0.sizeThatFits(proposal) }
+        let rowHeight = subSizes.lazy.map(\.height).max() ?? 0
         let proposedWidth = proposal.width ?? .infinity
-        var maxRowWidth = CGFloat.zero
-        var rowCount = CGFloat.zero
-        var x = CGFloat.zero
+
+        var position = CGPoint.zero
+        var currentRow = 0
 
         for subSize in subSizes {
-            if let maxRows, rowCount >= CGFloat(maxRows) {
-                break
-            }
-            let lineBreakAllowed = x > 0
-
-            if lineBreakAllowed, x + subSize.width > proposedWidth {
-                if let maxRows, rowCount >= CGFloat(maxRows) {
+            let lineBreakAllowed = position.x > 0
+            if lineBreakAllowed, position.x + subSize.width > proposedWidth {
+                currentRow += 1
+                if let maxRows, currentRow >= maxRows {
                     break
                 }
-                rowCount += 1
-                x = 0
+                position.x = 0
+                position.y += rowHeight
             }
 
-            x += subSize.width
-            maxRowWidth = max(maxRowWidth, x)
+            if let maxRows, currentRow >= maxRows {
+                break
+            }
+
+            position.x += subSize.width
         }
 
-        if x > 0 {
-            rowCount += 1
-        }
-
-        let rowHeight = subSizes.lazy.map(\.height).max() ?? 0
         return CGSize(
-            width: proposal.width ?? maxRowWidth,
-            height: rowCount * rowHeight
+            width: proposedWidth.isFinite ? proposedWidth : position.x,
+            height: CGFloat(currentRow + 1) * rowHeight
         )
     }
 

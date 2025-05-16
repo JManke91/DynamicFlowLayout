@@ -1,0 +1,86 @@
+// Sources/DynamicFlowLayout/FlowLayout.swift
+
+import SwiftUI
+
+public struct FlowLayout: Layout {
+    public var maxRows: Int?
+
+    public init(maxRows: Int? = nil) {
+        self.maxRows = maxRows
+    }
+
+    public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        let subSizes = subviews.map { $0.sizeThatFits(proposal) }
+        let proposedWidth = proposal.width ?? .infinity
+        var maxRowWidth = CGFloat.zero
+        var rowCount = CGFloat.zero
+        var x = CGFloat.zero
+
+        for subSize in subSizes {
+            if let maxRows, rowCount >= CGFloat(maxRows) {
+                break
+            }
+            let lineBreakAllowed = x > 0
+
+            if lineBreakAllowed, x + subSize.width > proposedWidth {
+                if let maxRows, rowCount >= CGFloat(maxRows) {
+                    break
+                }
+                rowCount += 1
+                x = 0
+            }
+
+            x += subSize.width
+            maxRowWidth = max(maxRowWidth, x)
+        }
+
+        if x > 0 {
+            rowCount += 1
+        }
+
+        let rowHeight = subSizes.lazy.map(\.height).max() ?? 0
+        return CGSize(
+            width: proposal.width ?? maxRowWidth,
+            height: rowCount * rowHeight
+        )
+    }
+
+    public func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        let subSizes = subviews.map { $0.sizeThatFits(proposal) }
+        let rowHeight = subSizes.lazy.map(\.height).max() ?? 0
+        let proposedWidth = proposal.width ?? .infinity
+
+        var position = CGPoint.zero
+        var currentRow = 0
+        var exceededMaxRows = false
+
+        for (subview, subSize) in zip(subviews, subSizes) {
+            let lineBreakAllowed = position.x > 0
+            if lineBreakAllowed, position.x + subSize.width > proposedWidth {
+                currentRow += 1
+                position.x = 0
+                position.y += rowHeight
+            }
+
+            if let maxRows, currentRow >= maxRows {
+                exceededMaxRows = true
+            }
+
+            if exceededMaxRows {
+                subview.place(
+                    at: .zero,
+                    proposal: ProposedViewSize(width: 0, height: 0)
+                )
+            } else {
+                subview.place(
+                    at: CGPoint(
+                        x: bounds.origin.x + position.x,
+                        y: bounds.origin.y + position.y + 0.5 * (rowHeight - subSize.height)
+                    ),
+                    proposal: proposal
+                )
+                position.x += subSize.width
+            }
+        }
+    }
+}

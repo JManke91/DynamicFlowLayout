@@ -71,7 +71,7 @@ public struct FlowLayout: Layout {
 
             if exceededMaxRows {
                 subview.place(
-                    at: .zero,
+                    at: CGPoint(x: -5000, y: -5000), // for the uncommon case that style modifiers are still rendered at (0,0)
                     proposal: ProposedViewSize(width: 0, height: 0)
                 )
             } else {
